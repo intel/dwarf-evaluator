@@ -33,16 +33,6 @@ and storage =
 (* Location is an offset into a storage.  *)
 and location = storage * int
 
-(* OPEN:
-
-   DWARF operations DW_OP_composite and DW_OP_piece currently guarantee
-   that the parts do not have gaps and overlaps.
-
-   Instead of having (s, e, (a, i)) as a part in a composite, we can
-   as well have (n, (a, i)) where n is the size of the part.  The
-   operations can still be defined correctly because of the invariant
-   that parts are contiguous with no gaps and overlaps.  *)
-
 (* Context accessors for convenience.  *)
 let rec mem_data context addr_space =
   match context with
