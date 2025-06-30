@@ -91,9 +91,9 @@ let data_size storage context =
   match storage with
   | Mem(addr_space) -> String.length (mem_data context addr_space)
   | Reg(n) -> String.length (reg_data context n)
-  | Undefined -> data_size (Mem 0) context
+  | Undefined -> Int.max_int
   | ImpData(data) -> String.length data
-  | ImpPointer(pointee_storage, offset) -> size_of_generic_type
+  | ImpPointer(pointee_storage, offset) -> Int.max_int
   | Composite(parts) -> (* The largest "end" marker in the parts.  *)
      List.fold_left (fun max (s, e, loc) -> if e > max then e else max) 0 parts
 
