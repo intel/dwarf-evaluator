@@ -276,6 +276,7 @@ let dbg_addr_of (loc: location) =
   | (Mem _, offset) -> offset
   | _ -> failwith "Cannot get address of that."
 
+(* Sample contexts for testing purposes.  *)
 let empty = []
 
 let context = [TargetMem(0, ints_to_data [100; 104; 108; 112; 116; 120]);
@@ -289,15 +290,16 @@ let context = [TargetMem(0, ints_to_data [100; 104; 108; 112; 116; 120]);
 
 let test value expectation message =
   Printf.printf "%s: %s\n" (if value = expectation then "Pass" else "FAIL") message
-;;
 
-test (eval0 [DW_OP_const 9;
-             DW_OP_const 5;
-             DW_OP_plus;
-             DW_OP_const 3;
-             DW_OP_mul] context)
-  (Val 42)
-  "arithmetic expr"
+(* Simple arithmethic exp test.  *)
+let _ =
+  test (eval0 [DW_OP_const 9;
+               DW_OP_const 5;
+               DW_OP_plus;
+               DW_OP_const 3;
+               DW_OP_mul] context)
+    (Val 42)
+    "arithmetic expr"
 
 (* x is an integer in memory.  *)
 let _ =
