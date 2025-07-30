@@ -559,7 +559,30 @@ let _ =
     (Composite [(11, mem_size - 7, (Mem 0, 18));
                 (5, 11, (Reg 3, 0));
                 (0, 5, (Mem 0, 7))], 0)
-    "overlay: register on memory"
+    "overlay: base (memory) bigger than overlay (register)"
+
+let _ =
+  let overlay_locexpr = [DW_OP_reg 3;
+                         DW_OP_addr 7;
+                         DW_OP_const 0;
+                         DW_OP_const 5;
+                         DW_OP_overlay] in
+  let overlay_loc = eval_to_loc overlay_locexpr context in
+  test overlay_loc
+    (Composite [(0, 5, (Mem 0, 7))], 0)
+    "overlay: base (register) completely covered by overlay (memory)"
+
+let _ =
+  let reg_size = data_size (Reg 1) context in
+  let overlay_locexpr = [DW_OP_reg 1;
+                         DW_OP_reg 2;
+                         DW_OP_const 0;
+                         DW_OP_const reg_size;
+                         DW_OP_overlay] in
+  let overlay_loc = eval_to_loc overlay_locexpr context in
+  test overlay_loc
+    (Composite [(0, reg_size, (Reg 2, 0))], 0)
+    "overlay: base perfectly covered by overlay"
 
 let _ =
   let reg_size = data_size (Reg 1) context in
@@ -586,7 +609,9 @@ let _ =
   test overlay_loc
     (Composite [(4, 8, (Reg 2, 0));
                 (0, 4, (Reg 1, 0))], 0)
-    "overlay: concat two registers"
+    "overlay: concat two registers";
+  test (data_size (fst overlay_loc) context) (reg_size * 2)
+    "overlay: size of composite"
 
 let _ =
   let reg_size = data_size (Reg 1) context in
@@ -604,6 +629,43 @@ let _ =
     (Composite [(1, 3, (Reg 2, 2));
                 (0, 1, (Reg 1, 3))], 0)
     "overlay: concat two registers with offsets"
+
+let _ =
+  let reg_size = data_size (Reg 1) context in
+  let overlay_locexpr = [DW_OP_reg 1;
+                         DW_OP_reg 2;
+                         DW_OP_const reg_size;
+                         DW_OP_const 0;
+                         DW_OP_overlay] in
+  let overlay_loc = eval_to_loc overlay_locexpr context in
+  test overlay_loc
+    (Composite [(0, reg_size, (Reg 1, 0))], 0)
+    "overlay: overlay width is nil"
+
+let _ =
+  let reg_size = data_size (Reg 2) context in
+  let overlay_locexpr = [DW_OP_composite;
+                         DW_OP_reg 2;
+                         DW_OP_const 0;
+                         DW_OP_const reg_size;
+                         DW_OP_overlay] in
+  let overlay_loc = eval_to_loc overlay_locexpr context in
+  test overlay_loc
+    (Composite [(0, reg_size, (Reg 2, 0))], 0)
+    "overlay: base is empty"
+
+let _ =
+  let reg_size = data_size (Reg 2) context in
+  let overlay_locexpr = [DW_OP_composite;
+                         DW_OP_reg 2;
+                         DW_OP_const 3;
+                         DW_OP_const reg_size;
+                         DW_OP_overlay] in
+  let overlay_loc = eval_to_loc overlay_locexpr context in
+  test overlay_loc
+    (Composite [(3, reg_size + 3, (Reg 2, 0));
+                (0, 3, (Undefined, 0))], 0)
+    "overlay: undefined at the beginning"
 
 (****************************)
 (* Print the final result.  *)
