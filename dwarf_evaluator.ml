@@ -235,7 +235,6 @@ let rec eval op stack context =
          let base_loc = as_loc el4 in
          let (b_storage, b_offset) = base_loc in
          let b_storage_size = data_size b_storage context in
-         (* TODO: Sync with the proposal.  *)
          if (width < 0 || offset < 0) then
            eval_error op stack
          else
