@@ -10,9 +10,6 @@
 (* Data are a sequence of bytes.  *)
 type data = string
 
-(* Size of an address in the default address space.  *)
-let size_of_generic_type = 4
-
 (* Evaluation context.
    The consumer provides the evaluation context.  *)
 type context_item =
