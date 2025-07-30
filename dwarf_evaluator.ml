@@ -87,7 +87,7 @@ type dwarf_op =
 (* What is the size of a virtual storage?  *)
 let data_size storage context =
   match storage with
-  | Mem(addr_space) -> String.length (mem_data context addr_space)
+  | Mem(addr_space) -> Int.max_int
   | Reg(n) -> String.length (reg_data context n)
   | Undefined -> Int.max_int
   | ImpData(data) -> String.length data
