@@ -363,6 +363,19 @@ let test_error lambda message =
   with
   | EvalError _  -> test 1 1 message
 
+(* Simple stack operations.  *)
+let _ =
+  test (eval_all [DW_OP_const 9;
+                  DW_OP_const 5] [] context) [Val 5; Val 9] "DW_OP_const"
+
+let _ =
+  test (eval_all [DW_OP_const 9;
+                  DW_OP_const 5;
+                  DW_OP_swap] [] context) [Val 9; Val 5] "DW_OP_swap"
+
+let _ =
+  test (eval_all [DW_OP_push_lane] [] [Lane 5]) [Val 5] "DW_OP_push_lane"
+
 (* Simple arithmethic exp test.  *)
 let _ =
   test (eval0 [DW_OP_const 9;
