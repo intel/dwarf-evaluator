@@ -81,6 +81,8 @@ type dwarf_op =
 
   | DW_OP_lt
   | DW_OP_eq
+  | DW_OP_skip of int (* Number of operators to skip.  *)
+  | DW_OP_bra of int (* Number of operators to skip.  *)
 
   | DW_OP_addr of int
   | DW_OP_reg of int
@@ -156,6 +158,11 @@ let ints_to_data ns =
   let data = Bytes.create (4 * List.length ns)
   in List.iteri (fun i n -> Bytes.set_int32_ne data (i * 4) (Int32.of_int n)) ns;
      String.of_bytes data
+
+(* Discard n elements from the head of the given list.  *)
+let rec discard n lst =
+  if n == 0 then lst
+  else discard (n - 1) (List.tl lst)
 
 exception ConversionError of string * stack_element
 exception EvalError of string * dwarf_op * (stack_element list)
@@ -355,10 +362,30 @@ let rec eval op stack context =
                  Loc(storage, new_offset)::stack'
       | _ -> eval_error op stack)
 
+  (* Handled in the upper level.  *)
+  | DW_OP_skip(n) | DW_OP_bra(n) -> stack
+
 (* Evaluate the given list of DWARF operators using the given stack.  *)
 and eval_all ops stack context =
   match ops with
   | [] -> stack
+
+  | DW_OP_skip(n)::ops' ->
+     (* DW_OP_skip is a control flow operator that requires access to
+        the complete DWARF expression to be able skip a number of
+        operators.  Hence, handle it here.  Without loss of
+        generality, we support skipping forward only.  *)
+     eval_all (discard n ops') stack context
+
+  | DW_OP_bra(n)::ops' ->
+     (match stack with
+      | v::stack' ->
+         if as_value v == 0 then
+           eval_all ops' stack' context
+         else
+           eval_all (discard n ops') stack' context
+      | _ -> eval_error (DW_OP_bra(n)) stack)
+
   | op::ops' -> eval_all ops' (eval op stack context) context
 
 (* Evaluate the given list of DWARF operators using an initially empty
@@ -497,6 +524,32 @@ let _ =
   test (eval0 [DW_OP_const 9;
                DW_OP_const 9;
                DW_OP_eq] context) (Val 1) "DW_OP_eq 2"
+
+(* Control flow.  *)
+let _ =
+  test (eval0 [DW_OP_const 15;
+               DW_OP_const 25;
+               DW_OP_eq;
+               DW_OP_bra 4;
+               DW_OP_const 2;
+               DW_OP_const 3;
+               DW_OP_mul;
+               DW_OP_skip 3;
+               DW_OP_const 4;
+               DW_OP_const 5;
+               DW_OP_plus] context) (Val 6) "control flow 1"
+let _ =
+  test (eval0 [DW_OP_const 15;
+               DW_OP_const 15;
+               DW_OP_eq;
+               DW_OP_bra 4;
+               DW_OP_const 2;
+               DW_OP_const 3;
+               DW_OP_mul;
+               DW_OP_skip 3;
+               DW_OP_const 4;
+               DW_OP_const 5;
+               DW_OP_plus] context) (Val 9) "control flow 2"
 
 (* x is an integer in memory.  *)
 let _ =
