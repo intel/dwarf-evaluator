@@ -488,6 +488,12 @@ let _ =
   let pointee_val = eval0 pointee_expr context in
   test pointee_val (Val 104) "DW_OP_deref a DW_OP_regval"
 
+(* Use DW_OP_reg and double deref p for the same as above.  *)
+let _ =
+  let pointee_expr = [DW_OP_reg 5; DW_OP_deref; DW_OP_deref] in
+  let pointee_val = eval0 pointee_expr context in
+  test pointee_val (Val 104) "double DW_OP_deref a DW_OP_reg"
+
 (* ip is an implicit pointer to x.  We can deref, but we cannot
    read/write ip.  *)
 let _ =
