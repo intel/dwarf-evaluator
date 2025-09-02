@@ -77,6 +77,7 @@ type dwarf_op =
   | DW_OP_swap
   | DW_OP_rot
   | DW_OP_push_lane
+  | DW_OP_regval of int
 
   | DW_OP_addr of int
   | DW_OP_reg of int
@@ -218,6 +219,13 @@ let rec eval op stack context =
       | _ -> eval_error op stack)
 
   | DW_OP_push_lane -> Val(lane context)::stack
+
+  | DW_OP_regval(r) ->
+     (* This is a simplified version of DW_OP_regval_type
+        where the type is implicitly an integer.  *)
+     let data = reg_data context r in
+     let as_int = Int32.to_int (String.get_int32_ne data 0) in
+     Val(as_int)::stack
 
   | DW_OP_addr(a) -> Loc(Mem 0, a)::stack
 
@@ -434,6 +442,9 @@ let _ =
 let _ =
   test (eval_all [DW_OP_push_lane] [] [Lane 5]) [Val 5] "DW_OP_push_lane"
 
+let _ =
+  test (eval_all [DW_OP_regval 2] [] context) [Val 1002] "DW_OP_regval"
+
 (* Simple arithmethic exp test.  *)
 let _ =
   test (eval0 [DW_OP_const 9;
@@ -469,6 +480,13 @@ let _ =
   let p_deref_val = dbg_deref p_loc context in
   test p_val 4 "value of p";
   test p_deref_val 104 "value of *p"
+
+(* Use DW_OP_regval and deref p.  This also tests implicit conversion
+   from a value to a memory location.  *)
+let _ =
+  let pointee_expr = [DW_OP_regval 5; DW_OP_deref] in
+  let pointee_val = eval0 pointee_expr context in
+  test pointee_val (Val 104) "DW_OP_deref a DW_OP_regval"
 
 (* ip is an implicit pointer to x.  We can deref, but we cannot
    read/write ip.  *)
