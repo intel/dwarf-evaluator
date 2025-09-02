@@ -83,7 +83,7 @@ type dwarf_op =
   | DW_OP_reg of int
   | DW_OP_breg of int * int
   | DW_OP_undefined
-  | DW_OP_implicit_value of string
+  | DW_OP_implicit_value of int * data
   | DW_OP_stack_value
   | DW_OP_implicit_pointer of (dwarf_op list) * int
   | DW_OP_composite
@@ -238,7 +238,11 @@ let rec eval op stack context =
 
   | DW_OP_undefined -> Loc(Undefined, 0)::stack
 
-  | DW_OP_implicit_value(data) -> Loc(ImpData data, 0)::stack
+  | DW_OP_implicit_value(n, data) ->
+     if String.length data == n then
+       Loc(ImpData data, 0)::stack
+     else
+       eval_error op stack
 
   | DW_OP_stack_value ->
      (match stack with
@@ -524,6 +528,13 @@ let _ =
   let v_val = fetch_int (Lane(5)::context) v_loc in
   test v_val 405 "value of v in lane 5"
 
+(* q is an implicit value.  *)
+let _ =
+  let q_locexpr = [DW_OP_implicit_value (4, int_to_data 42)] in
+  let q_loc = eval_to_loc q_locexpr empty in
+  let q_val = fetch_int empty q_loc in
+  test q_val 42 "implicit value"
+
 (* q is a value computed in the DWARF stack.  *)
 let _ =
   let q_locexpr = [DW_OP_const 14;
@@ -578,7 +589,7 @@ let _ =
                    DW_OP_piece 4;
                    DW_OP_reg 3;
                    DW_OP_piece 4;
-                   DW_OP_implicit_value (int_to_data 333);
+                   DW_OP_implicit_value (4, int_to_data 333);
                    DW_OP_piece 4] in
   let s_loc = eval_to_loc s_locexpr context in
   (* ... s.m ... *)
