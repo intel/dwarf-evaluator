@@ -73,6 +73,7 @@ type dwarf_op =
   | DW_OP_dup
   | DW_OP_drop
   | DW_OP_pick of int
+  | DW_OP_over
   | DW_OP_swap
   | DW_OP_push_lane
 
@@ -199,6 +200,11 @@ let rec eval op stack context =
        eval_error op stack
      else
        (List.nth stack i)::stack
+
+  | DW_OP_over ->
+     (match stack with
+      | e1::e2::stack' -> e2::e1::e2::stack'
+      | _ -> eval_error op stack)
 
   | DW_OP_swap ->
      (match stack with
@@ -402,6 +408,11 @@ let _ =
                   DW_OP_const 5;
                   DW_OP_const 3;
                   DW_OP_pick 2] [] context) [Val 9; Val 3; Val 5; Val 9] "DW_OP_pick"
+
+let _ =
+  test (eval_all [DW_OP_const 9;
+                  DW_OP_const 5;
+                  DW_OP_over] [] context) [Val 9; Val 5; Val 9] "DW_OP_over"
 
 let _ =
   test (eval_all [DW_OP_const 9;
