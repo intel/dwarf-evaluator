@@ -45,7 +45,11 @@ let rec reg_data context num =
 
 let rec lane context =
   match context with
-  | [] -> failwith "lane not found in context"
+  (* DWARF spec states "If the current program is not using a
+     SIMD/SIMT execution model, the current lane is always 0."
+     Therefore, return 0 if the lane is not explicitly specified in
+     the context.  *)
+  | [] -> 0
   | Lane(n)::context' -> n
   | _::context' -> lane context'
 
