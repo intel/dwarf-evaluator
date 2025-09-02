@@ -70,6 +70,7 @@ type dwarf_op =
   | DW_OP_const of int
   | DW_OP_plus
   | DW_OP_mul
+  | DW_OP_dup
   | DW_OP_swap
   | DW_OP_push_lane
 
@@ -179,6 +180,11 @@ let rec eval op stack context =
   | DW_OP_mul ->
      (match stack with
       | e1::e2::stack' -> Val((as_value e1) * (as_value e2))::stack'
+      | _ -> eval_error op stack)
+
+  | DW_OP_dup ->
+     (match stack with
+      | e1::stack' -> e1::e1::stack'
       | _ -> eval_error op stack)
 
   | DW_OP_swap ->
@@ -367,6 +373,11 @@ let test_error lambda message =
 let _ =
   test (eval_all [DW_OP_const 9;
                   DW_OP_const 5] [] context) [Val 5; Val 9] "DW_OP_const"
+
+let _ =
+  test (eval_all [DW_OP_const 9;
+                  DW_OP_const 5;
+                  DW_OP_dup] [] context) [Val 5; Val 5; Val 9] "DW_OP_dup"
 
 let _ =
   test (eval_all [DW_OP_const 9;
