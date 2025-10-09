@@ -331,11 +331,13 @@ let rec eval op stack context =
          let (b_storage, b_offset) = base_loc in
          let b_storage_size = data_size b_storage context in
          let o_storage_size = data_size o_storage context in
+         let overlay_start = offset + b_offset in
          if (width < 0
+             || overlay_start < 0
              || width > o_storage_size - o_offset) then
            eval_error op stack
          else
-           (* There are 5 kinds of parts that may occur in the
+           (* There are 4 kinds of parts that may occur in the
               resulting composite.  Although not all kinds will end
               up existing in the end result, to make the definition
               easier, we define all of them and then do elimination at
@@ -351,11 +353,7 @@ let rec eval op stack context =
 
               3. The overlay itself.
 
-              4. The expansion with undefined storage from the end of
-              the overlay until the beginning of the base,
-              when the overlay is to the left of the base.
-
-              5. The remaining data from the base storage up to its end.  *)
+              4. The remaining data from the base storage up to its end.  *)
 
            let overlay_start = offset + b_offset in
            let overlay_end = overlay_start + width in
@@ -363,16 +361,10 @@ let rec eval op stack context =
            let part1 = (0, part1_end, (b_storage, 0)) in
            let part2 = (part1_end, overlay_start, (Undefined, 0)) in
            let part3 = (overlay_start, overlay_end, overlay_loc) in
-           let part4 = (overlay_end, 0, (Undefined, 0)) in
-           let part5_begin = Int.max overlay_end 0 in
-           let part5 = (part5_begin, b_storage_size, (b_storage, part5_begin)) in
-           let parts = simplify [part1; part2; part3; part4; part5] in
-           (* If the overlay is positioned to the left of the base,
-              adjust the offsets by shifting the indices.  *)
-           let delta = if overlay_start < 0 then (-overlay_start) else 0 in
-           let shift (s, e, loc) = (s + delta, e + delta, loc) in
-           let parts = List.map shift parts in
-           Loc(Composite parts, b_offset + delta)::stack'
+           let part4_loc = (b_storage, overlay_end) in
+           let part4 = (overlay_end, b_storage_size, part4_loc) in
+           let parts = simplify [part1; part2; part3; part4] in
+           Loc(Composite parts, b_offset)::stack'
 
       | _ -> eval_error op stack)
 
@@ -1175,8 +1167,7 @@ let _ =
   o_offset : 3    v
   o_storage:  |yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy|
 
-  c_offset :                          v
-  composite:     |yyyyyybbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb|
+  composite: N/A
  *)
 let _ =
   let overlay_locexpr = [DW_OP_reg 4; DW_OP_const 15; DW_OP_offset;
@@ -1184,62 +1175,8 @@ let _ =
                          DW_OP_const (-20);
                          DW_OP_const 6;
                          DW_OP_overlay] in
-  let overlay_loc = eval_to_loc overlay_locexpr context in
-  test overlay_loc
-    (Composite [(6, 37, (Reg 4, 1));
-                (0, 6, (Reg 7, 3))], 20)
-  "overlay: negative offset, overlay starts before base"
-
-(*
-  b_offset : 14                       v
-  b_storage:           |bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb|
-
-  offset   : -20  <-------------------|
-  width    : 6   |------|
-
-  o_offset : 3    v
-  o_storage:  |yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy|
-
-  c_offset :                          v
-  composite:     |yyyyyybbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb|
- *)
-let _ =
-  let overlay_locexpr = [DW_OP_reg 4; DW_OP_const 14; DW_OP_offset;
-                         DW_OP_reg 7; DW_OP_const 3; DW_OP_offset;
-                         DW_OP_const (-20);
-                         DW_OP_const 6;
-                         DW_OP_overlay] in
-  let overlay_loc = eval_to_loc overlay_locexpr context in
-  test overlay_loc
-    (Composite [(6, 38, (Reg 4, 0));
-                (0, 6, (Reg 7, 3))], 20)
-  "overlay: negative offset, overlay ends at where base begins"
-
-(*
-  b_offset : 7                        v
-  b_storage:                  |bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb|
-
-  offset   : -20  <-------------------|
-  width    : 6   |------|
-
-  o_offset : 3    v
-  o_storage:  |yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy|
-
-  c_offset :                          v
-  composite:     |yyyyyyUUUUUUUbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb|
- *)
-let _ =
-  let overlay_locexpr = [DW_OP_reg 4; DW_OP_const 7; DW_OP_offset;
-                         DW_OP_reg 7; DW_OP_const 3; DW_OP_offset;
-                         DW_OP_const (-20);
-                         DW_OP_const 6;
-                         DW_OP_overlay] in
-  let overlay_loc = eval_to_loc overlay_locexpr context in
-  test overlay_loc
-    (Composite [(13, 45, (Reg 4, 0));
-                (6, 13, (Undefined, 0));
-                (0, 6, (Reg 7, 3))], 20)
-  "overlay: negative offset, gap between overlay and base"
+  test_error (fun () -> eval_to_loc overlay_locexpr context)
+    "overlay: negative offset, overlay starts before base"
 
 (****************************)
 (* Print the final result.  *)
