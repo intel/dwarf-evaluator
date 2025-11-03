@@ -107,7 +107,11 @@ let data_size storage context =
   | Reg(n) -> String.length (reg_data context n)
   | Undefined -> Int.max_int
   | ImpData(data) -> String.length data
-  | ImpPointer(pointee_storage, offset) -> Int.max_int
+  | ImpPointer(pointee_loc) ->
+     (* Size of an implicit pointer storage is the size
+        of the pointer that was optimized away.  In this
+        implementation, we assume pointers are 32b.  *)
+     4
   | Composite(parts) -> (* The largest "end" marker in the parts.  *)
      List.fold_left (fun max (s, e, loc) -> if e > max then e else max) 0 parts
 
