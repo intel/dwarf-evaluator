@@ -531,35 +531,35 @@ let _ =
                   DW_OP_const 5] [] context) [Val 5; Val 9] "DW_OP_const"
 
 let _ =
-  test (eval_all [DW_OP_const 9;
-                  DW_OP_const 5;
+  test (eval_all [DW_OP_lit9;
+                  DW_OP_lit5;
                   DW_OP_dup] [] context) [Val 5; Val 5; Val 9] "DW_OP_dup"
 
 let _ =
-  test (eval_all [DW_OP_const 9;
-                  DW_OP_const 5;
+  test (eval_all [DW_OP_lit9;
+                  DW_OP_lit5;
                   DW_OP_drop] [] context) [Val 9] "DW_OP_drop"
 
 let _ =
-  test (eval_all [DW_OP_const 9;
-                  DW_OP_const 5;
-                  DW_OP_const 3;
+  test (eval_all [DW_OP_lit9;
+                  DW_OP_lit5;
+                  DW_OP_lit3;
                   DW_OP_pick 2] [] context) [Val 9; Val 3; Val 5; Val 9] "DW_OP_pick"
 
 let _ =
-  test (eval_all [DW_OP_const 9;
-                  DW_OP_const 5;
+  test (eval_all [DW_OP_lit9;
+                  DW_OP_lit5;
                   DW_OP_over] [] context) [Val 9; Val 5; Val 9] "DW_OP_over"
 
 let _ =
-  test (eval_all [DW_OP_const 9;
-                  DW_OP_const 5;
+  test (eval_all [DW_OP_lit9;
+                  DW_OP_lit5;
                   DW_OP_swap] [] context) [Val 9; Val 5] "DW_OP_swap"
 
 let _ =
-  test (eval_all [DW_OP_const 3;
-                  DW_OP_const 2;
-                  DW_OP_const 1;
+  test (eval_all [DW_OP_lit3;
+                  DW_OP_lit2;
+                  DW_OP_lit1;
                   DW_OP_rot] [] context) [Val 2; Val 3; Val 1] "DW_OP_rot"
 
 let _ =
@@ -582,66 +582,66 @@ let _ =
 
 (* Simple arithmethic exp test.  *)
 let _ =
-  test (eval0 [DW_OP_const 9;
-               DW_OP_const 5;
+  test (eval0 [DW_OP_lit9;
+               DW_OP_lit5;
                DW_OP_plus;
-               DW_OP_const 3;
+               DW_OP_lit3;
                DW_OP_mul] context)
     (Val 42)
     "arithmetic expr"
 
 (* Relational operators.  *)
 let _ =
-  test (eval0 [DW_OP_const 9;
-               DW_OP_const 5;
+  test (eval0 [DW_OP_lit9;
+               DW_OP_lit5;
                DW_OP_lt] context) (Val 0) "DW_OP_lt 1"
 let _ =
-  test (eval0 [DW_OP_const 5;
-               DW_OP_const 9;
+  test (eval0 [DW_OP_lit5;
+               DW_OP_lit9;
                DW_OP_lt] context) (Val 1) "DW_OP_lt 2"
 let _ =
-  test (eval0 [DW_OP_const 9;
-               DW_OP_const 5;
+  test (eval0 [DW_OP_lit9;
+               DW_OP_lit5;
                DW_OP_eq] context) (Val 0) "DW_OP_eq 1"
 let _ =
-  test (eval0 [DW_OP_const 9;
-               DW_OP_const 9;
+  test (eval0 [DW_OP_lit9;
+               DW_OP_lit9;
                DW_OP_eq] context) (Val 1) "DW_OP_eq 2"
 
 (* Control flow.  *)
 let _ =
-  test (eval0 [DW_OP_const 15;
-               DW_OP_const 25;
+  test (eval0 [DW_OP_lit15;
+               DW_OP_lit25;
                DW_OP_eq;
                DW_OP_bra 4;
-               DW_OP_const 2;
-               DW_OP_const 3;
+               DW_OP_lit2;
+               DW_OP_lit3;
                DW_OP_mul;
                DW_OP_skip 3;
-               DW_OP_const 4;
-               DW_OP_const 5;
+               DW_OP_lit4;
+               DW_OP_lit5;
                DW_OP_plus] context) (Val 6) "control flow 1"
 let _ =
-  test (eval0 [DW_OP_const 15;
-               DW_OP_const 15;
+  test (eval0 [DW_OP_lit15;
+               DW_OP_lit15;
                DW_OP_eq;
                DW_OP_bra 4;
-               DW_OP_const 2;
-               DW_OP_const 3;
+               DW_OP_lit2;
+               DW_OP_lit3;
                DW_OP_mul;
                DW_OP_skip 3;
-               DW_OP_const 4;
-               DW_OP_const 5;
+               DW_OP_lit4;
+               DW_OP_lit5;
                DW_OP_plus] context) (Val 9) "control flow 2"
 let _ =
-  test (eval0 [DW_OP_const 17;
-               DW_OP_const 25;
+  test (eval0 [DW_OP_lit17;
+               DW_OP_lit25;
                DW_OP_call [DW_OP_plus]] context) (Val 42) "DW_OP_call 1"
 let _ =
-  test (eval0 [DW_OP_const 17;
-               DW_OP_const 25;
+  test (eval0 [DW_OP_lit17;
+               DW_OP_lit25;
                DW_OP_call [DW_OP_plus];
-               DW_OP_const 8;
+               DW_OP_lit8;
                DW_OP_plus] context) (Val 50) "DW_OP_call 2"
 
 (* x is an integer in memory.  *)
@@ -703,7 +703,7 @@ let _ =
 let _ =
   let v_locexpr = [DW_OP_reg 4;
                    DW_OP_push_lane;
-                   DW_OP_const 4;
+                   DW_OP_lit4;
                    DW_OP_mul;
                    DW_OP_offset] in
   let v_loc = eval_to_loc v_locexpr (Lane(3)::context) in
@@ -722,8 +722,8 @@ let _ =
 
 (* q is a value computed in the DWARF stack.  *)
 let _ =
-  let q_locexpr = [DW_OP_const 14;
-                   DW_OP_const 3;
+  let q_locexpr = [DW_OP_lit14;
+                   DW_OP_lit3;
                    DW_OP_mul;
                    DW_OP_stack_value] in
   let q_loc = eval_to_loc q_locexpr empty in
@@ -745,7 +745,7 @@ let _ =
                    DW_OP_reg 5;
                    DW_OP_deref;
                    DW_OP_offset;
-                   DW_OP_const 12;
+                   DW_OP_lit12;
                    DW_OP_offset] in
   let z_loc = eval_to_loc z_locexpr context in
   let z_addr = dbg_addr_of z_loc in
@@ -778,29 +778,29 @@ let _ =
                    DW_OP_piece 4] in
   let s_loc = eval_to_loc s_locexpr context in
   (* ... s.m ... *)
-  let s_m_locexpr = s_locexpr @ [DW_OP_const 0; DW_OP_offset] in
+  let s_m_locexpr = s_locexpr @ [DW_OP_lit0; DW_OP_offset] in
   let s_m_val = fetch_int context (eval_to_loc s_m_locexpr context) in
   test s_m_val 120 "value of s.m";
   (* ... s.r2 ... *)
-  let s_r2_locexpr = s_locexpr @ [DW_OP_const 8; DW_OP_offset] in
+  let s_r2_locexpr = s_locexpr @ [DW_OP_lit8; DW_OP_offset] in
   let s_r2_val = fetch_int context (eval_to_loc s_r2_locexpr context) in
   test s_r2_val 1002 "value of s.r2";
   (* ... s.r3 ... *)
-  let s_r3_locexpr = s_locexpr @ [DW_OP_const 12; DW_OP_offset] in
+  let s_r3_locexpr = s_locexpr @ [DW_OP_lit12; DW_OP_offset] in
   let s_r3_val = fetch_int context (eval_to_loc s_r3_locexpr context) in
   test s_r3_val 1003 "value of s.r3";
   (* ... s.d ... *)
-  let s_d_locexpr = s_locexpr @ [DW_OP_const 16; DW_OP_offset] in
+  let s_d_locexpr = s_locexpr @ [DW_OP_lit16; DW_OP_offset] in
   let s_d_val = fetch_int context (eval_to_loc s_d_locexpr context) in
   test s_d_val 333 "value of s.d";
   (* ... *s.ptr ... *)
-  let s_ptr_locexpr = s_locexpr @ [DW_OP_const 4; DW_OP_offset] in
+  let s_ptr_locexpr = s_locexpr @ [DW_OP_lit4; DW_OP_offset] in
   let s_ptr_loc = eval_to_loc s_ptr_locexpr context in
   let s_ptr_deref_val = dbg_deref s_ptr_loc context in
   test s_ptr_deref_val 104 "value of *s.ptr";
   (* ... this.r3 ...  *)
   let r3_data_member_locexpr = [DW_OP_push_object_location;
-                                DW_OP_const 12;
+                                DW_OP_lit12;
                                 DW_OP_offset] in
   let r3_data_member_loc = eval_to_loc r3_data_member_locexpr (Object(s_loc)::context) in
   let r3_data_member_val = fetch_int context r3_data_member_loc in
@@ -849,8 +849,8 @@ let _ =
 let _ =
   let overlay_locexpr = [DW_OP_addr 24;
                          DW_OP_reg 6;
-                         DW_OP_const 8;
-                         DW_OP_const 4;
+                         DW_OP_lit8;
+                         DW_OP_lit4;
                          DW_OP_overlay] in
   let (storage, offset) = eval_to_loc overlay_locexpr context in
   let array_element i =
@@ -885,10 +885,10 @@ let vreg_size = data_size (Reg 4) context
   composite:     |bbbbbbbbyyyyyybbbbbbbbbbbbbbbbbb|
  *)
 let _ =
-  let overlay_locexpr = [DW_OP_reg 4; DW_OP_const 3; DW_OP_offset;
-                         DW_OP_reg 7; DW_OP_const 7; DW_OP_offset;
-                         DW_OP_const 5;
-                         DW_OP_const 6;
+  let overlay_locexpr = [DW_OP_reg 4; DW_OP_lit3; DW_OP_offset;
+                         DW_OP_reg 7; DW_OP_lit7; DW_OP_offset;
+                         DW_OP_lit5;
+                         DW_OP_lit6;
                          DW_OP_overlay] in
   let overlay_loc = eval_to_loc overlay_locexpr context in
   test overlay_loc
@@ -911,10 +911,10 @@ let _ =
   composite:     |bbbbbbbbbbbbbbbbbbbbbbbbbbyyyyyy|
  *)
 let _ =
-  let overlay_locexpr = [DW_OP_reg 4; DW_OP_const 3; DW_OP_offset;
-                         DW_OP_reg 7; DW_OP_const 7; DW_OP_offset;
-                         DW_OP_const 23;
-                         DW_OP_const 6;
+  let overlay_locexpr = [DW_OP_reg 4; DW_OP_lit3; DW_OP_offset;
+                         DW_OP_reg 7; DW_OP_lit7; DW_OP_offset;
+                         DW_OP_lit23;
+                         DW_OP_lit6;
                          DW_OP_overlay] in
   let overlay_loc = eval_to_loc overlay_locexpr context in
   test overlay_loc
@@ -938,8 +938,8 @@ let _ =
 let _ =
   let width = 13 in
   let overlay_locexpr = [DW_OP_reg 3;
-                         DW_OP_reg 4; DW_OP_const 7; DW_OP_offset;
-                         DW_OP_const 0;
+                         DW_OP_reg 4; DW_OP_lit7; DW_OP_offset;
+                         DW_OP_lit0;
                          DW_OP_const width;
                          DW_OP_overlay] in
   let overlay_loc = eval_to_loc overlay_locexpr context in
@@ -963,7 +963,7 @@ let _ =
 let _ =
   let overlay_locexpr = [DW_OP_reg 1;
                          DW_OP_reg 2;
-                         DW_OP_const 0;
+                         DW_OP_lit0;
                          DW_OP_const reg_size;
                          DW_OP_overlay] in
   let overlay_loc = eval_to_loc overlay_locexpr context in
@@ -985,10 +985,10 @@ let _ =
   composite:     |bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbUUyyyyyy|
  *)
 let _ =
-  let overlay_locexpr = [DW_OP_reg 4; DW_OP_const 3; DW_OP_offset;
-                         DW_OP_reg 7; DW_OP_const 7; DW_OP_offset;
-                         DW_OP_const 31;
-                         DW_OP_const 6;
+  let overlay_locexpr = [DW_OP_reg 4; DW_OP_lit3; DW_OP_offset;
+                         DW_OP_reg 7; DW_OP_lit7; DW_OP_offset;
+                         DW_OP_lit31;
+                         DW_OP_lit6;
                          DW_OP_overlay] in
   let overlay_loc = eval_to_loc overlay_locexpr context in
   test overlay_loc
@@ -1011,10 +1011,10 @@ let _ =
   composite:     |bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbyyyyyy|
  *)
 let _ =
-  let overlay_locexpr = [DW_OP_reg 4; DW_OP_const 3; DW_OP_offset;
-                         DW_OP_reg 7; DW_OP_const 7; DW_OP_offset;
-                         DW_OP_const 29;
-                         DW_OP_const 6;
+  let overlay_locexpr = [DW_OP_reg 4; DW_OP_lit3; DW_OP_offset;
+                         DW_OP_reg 7; DW_OP_lit7; DW_OP_offset;
+                         DW_OP_lit29;
+                         DW_OP_lit6;
                          DW_OP_overlay] in
   let overlay_loc = eval_to_loc overlay_locexpr context in
   test overlay_loc
@@ -1038,10 +1038,10 @@ let _ =
   composite:     |bbbbbbbbbbbbbbbbbbbbbbbbbbbbbyyyyyy|
  *)
 let _ =
-  let overlay_locexpr = [DW_OP_reg 4; DW_OP_const 3; DW_OP_offset;
-                         DW_OP_reg 7; DW_OP_const 7; DW_OP_offset;
-                         DW_OP_const 26;
-                         DW_OP_const 6;
+  let overlay_locexpr = [DW_OP_reg 4; DW_OP_lit3; DW_OP_offset;
+                         DW_OP_reg 7; DW_OP_lit7; DW_OP_offset;
+                         DW_OP_lit26;
+                         DW_OP_lit6;
                          DW_OP_overlay] in
   let overlay_loc = eval_to_loc overlay_locexpr context in
   test overlay_loc
@@ -1063,10 +1063,10 @@ let _ =
   composite:     |bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb|
  *)
 let _ =
-  let overlay_locexpr = [DW_OP_reg 4; DW_OP_const 3; DW_OP_offset;
-                         DW_OP_reg 7; DW_OP_const 7; DW_OP_offset;
-                         DW_OP_const 26;
-                         DW_OP_const 0;
+  let overlay_locexpr = [DW_OP_reg 4; DW_OP_lit3; DW_OP_offset;
+                         DW_OP_reg 7; DW_OP_lit7; DW_OP_offset;
+                         DW_OP_lit26;
+                         DW_OP_lit0;
                          DW_OP_overlay] in
   let overlay_loc = eval_to_loc overlay_locexpr context in
   test overlay_loc
@@ -1088,7 +1088,7 @@ let _ =
 let _ =
   let overlay_locexpr = [DW_OP_reg 1;
                          DW_OP_reg 2;
-                         DW_OP_const 0;
+                         DW_OP_lit0;
                          DW_OP_const (reg_size + 1);
                          DW_OP_overlay] in
   test_error (fun () -> eval_to_loc overlay_locexpr context)
@@ -1108,8 +1108,8 @@ let _ =
  *)
 let _ =
   let overlay_locexpr = [DW_OP_reg 1;
-                         DW_OP_reg 2; DW_OP_const 2; DW_OP_offset;
-                         DW_OP_const 0;
+                         DW_OP_reg 2; DW_OP_lit2; DW_OP_offset;
+                         DW_OP_lit0;
                          DW_OP_const (reg_size - 1);
                          DW_OP_overlay] in
   test_error (fun () -> eval_to_loc overlay_locexpr context)
@@ -1131,7 +1131,7 @@ let _ =
 let _ =
   let overlay_locexpr = [DW_OP_composite;
                          DW_OP_reg 2;
-                         DW_OP_const 0;
+                         DW_OP_lit0;
                          DW_OP_const reg_size;
                          DW_OP_overlay] in
   let overlay_loc = eval_to_loc overlay_locexpr context in
@@ -1155,7 +1155,7 @@ let _ =
 let _ =
   let overlay_locexpr = [DW_OP_composite;
                          DW_OP_reg 2;
-                         DW_OP_const 3;
+                         DW_OP_lit3;
                          DW_OP_const reg_size;
                          DW_OP_overlay] in
   let overlay_loc = eval_to_loc overlay_locexpr context in
@@ -1178,10 +1178,10 @@ let _ =
   composite:     |bbbbbbbbbbbbbyyyyyybbbbbbbbbbbbb|
  *)
 let _ =
-  let overlay_locexpr = [DW_OP_reg 4; DW_OP_const 23; DW_OP_offset;
-                         DW_OP_reg 7; DW_OP_const 7; DW_OP_offset;
+  let overlay_locexpr = [DW_OP_reg 4; DW_OP_lit23; DW_OP_offset;
+                         DW_OP_reg 7; DW_OP_lit7; DW_OP_offset;
                          DW_OP_const (-10);
-                         DW_OP_const 6;
+                         DW_OP_lit6;
                          DW_OP_overlay] in
   let overlay_loc = eval_to_loc overlay_locexpr context in
   test overlay_loc
@@ -1204,10 +1204,10 @@ let _ =
   composite:     |yyyyyybbbbbbbbbbbbbbbbbbbbbbbbbb|
  *)
 let _ =
-  let overlay_locexpr = [DW_OP_reg 4; DW_OP_const 23; DW_OP_offset;
-                         DW_OP_reg 7; DW_OP_const 3; DW_OP_offset;
+  let overlay_locexpr = [DW_OP_reg 4; DW_OP_lit23; DW_OP_offset;
+                         DW_OP_reg 7; DW_OP_lit3; DW_OP_offset;
                          DW_OP_const (-23);
-                         DW_OP_const 6;
+                         DW_OP_lit6;
                          DW_OP_overlay] in
   let overlay_loc = eval_to_loc overlay_locexpr context in
   test overlay_loc
@@ -1228,10 +1228,10 @@ let _ =
   composite: N/A
  *)
 let _ =
-  let overlay_locexpr = [DW_OP_reg 4; DW_OP_const 15; DW_OP_offset;
-                         DW_OP_reg 7; DW_OP_const 3; DW_OP_offset;
+  let overlay_locexpr = [DW_OP_reg 4; DW_OP_lit15; DW_OP_offset;
+                         DW_OP_reg 7; DW_OP_lit3; DW_OP_offset;
                          DW_OP_const (-20);
-                         DW_OP_const 6;
+                         DW_OP_lit6;
                          DW_OP_overlay] in
   test_error (fun () -> eval_to_loc overlay_locexpr context)
     "overlay: negative offset, overlay starts before base"
