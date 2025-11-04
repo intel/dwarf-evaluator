@@ -68,6 +68,15 @@ type stack_element =
 
 type dwarf_op =
   | DW_OP_const of int
+  | DW_OP_lit0  | DW_OP_lit1  | DW_OP_lit2  | DW_OP_lit3
+  | DW_OP_lit4  | DW_OP_lit5  | DW_OP_lit6  | DW_OP_lit7
+  | DW_OP_lit8  | DW_OP_lit9  | DW_OP_lit10 | DW_OP_lit11
+  | DW_OP_lit12 | DW_OP_lit13 | DW_OP_lit14 | DW_OP_lit15
+  | DW_OP_lit16 | DW_OP_lit17 | DW_OP_lit18 | DW_OP_lit19
+  | DW_OP_lit20 | DW_OP_lit21 | DW_OP_lit22 | DW_OP_lit23
+  | DW_OP_lit24 | DW_OP_lit25 | DW_OP_lit26 | DW_OP_lit27
+  | DW_OP_lit28 | DW_OP_lit29 | DW_OP_lit30 | DW_OP_lit31
+
   | DW_OP_plus
   | DW_OP_mul
   | DW_OP_dup
@@ -206,6 +215,39 @@ let as_loc element =
 let rec eval op stack context =
   match op with
   | DW_OP_const(x) -> Val(x)::stack
+
+  | DW_OP_lit0  -> Val(0)::stack
+  | DW_OP_lit1  -> Val(1)::stack
+  | DW_OP_lit2  -> Val(2)::stack
+  | DW_OP_lit3  -> Val(3)::stack
+  | DW_OP_lit4  -> Val(4)::stack
+  | DW_OP_lit5  -> Val(5)::stack
+  | DW_OP_lit6  -> Val(6)::stack
+  | DW_OP_lit7  -> Val(7)::stack
+  | DW_OP_lit8  -> Val(8)::stack
+  | DW_OP_lit9  -> Val(9)::stack
+  | DW_OP_lit10 -> Val(10)::stack
+  | DW_OP_lit11 -> Val(11)::stack
+  | DW_OP_lit12 -> Val(12)::stack
+  | DW_OP_lit13 -> Val(13)::stack
+  | DW_OP_lit14 -> Val(14)::stack
+  | DW_OP_lit15 -> Val(15)::stack
+  | DW_OP_lit16 -> Val(16)::stack
+  | DW_OP_lit17 -> Val(17)::stack
+  | DW_OP_lit18 -> Val(18)::stack
+  | DW_OP_lit19 -> Val(19)::stack
+  | DW_OP_lit20 -> Val(20)::stack
+  | DW_OP_lit21 -> Val(21)::stack
+  | DW_OP_lit22 -> Val(22)::stack
+  | DW_OP_lit23 -> Val(23)::stack
+  | DW_OP_lit24 -> Val(24)::stack
+  | DW_OP_lit25 -> Val(25)::stack
+  | DW_OP_lit26 -> Val(26)::stack
+  | DW_OP_lit27 -> Val(27)::stack
+  | DW_OP_lit28 -> Val(28)::stack
+  | DW_OP_lit29 -> Val(29)::stack
+  | DW_OP_lit30 -> Val(30)::stack
+  | DW_OP_lit31 -> Val(31)::stack
 
   | DW_OP_plus ->
      (match stack with
@@ -519,6 +561,18 @@ let _ =
                   DW_OP_const 2;
                   DW_OP_const 1;
                   DW_OP_rot] [] context) [Val 2; Val 3; Val 1] "DW_OP_rot"
+
+let _ =
+  test (eval_all [DW_OP_lit0;
+                  DW_OP_lit1;
+                  DW_OP_lit2;
+                  DW_OP_lit3;
+                  DW_OP_lit4;
+                  DW_OP_lit5;
+                  DW_OP_lit10;
+                  DW_OP_lit15;
+                  DW_OP_lit31] [] context)
+    [Val 31; Val 15; Val 10; Val 5; Val 4; Val 3; Val 2; Val 1; Val 0] "DW_OP_lit"
 
 let _ =
   test (eval_all [DW_OP_push_lane] [] [Lane 5]) [Val 5] "DW_OP_push_lane"
