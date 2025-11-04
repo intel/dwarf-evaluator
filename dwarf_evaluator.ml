@@ -95,7 +95,7 @@ type dwarf_op =
   | DW_OP_call of (dwarf_op list)
 
   | DW_OP_addr of int
-  | DW_OP_reg of int
+  | DW_OP_regx of int
   | DW_OP_reg0  | DW_OP_reg1  | DW_OP_reg2  | DW_OP_reg3
   | DW_OP_reg4  | DW_OP_reg5  | DW_OP_reg6  | DW_OP_reg7
   | DW_OP_reg8  | DW_OP_reg9  | DW_OP_reg10 | DW_OP_reg11
@@ -331,7 +331,7 @@ let rec eval op stack context =
 
   | DW_OP_addr(a) -> Loc(Mem 0, a)::stack
 
-  | DW_OP_reg(n) -> Loc(Reg n, 0)::stack
+  | DW_OP_regx(n) -> Loc(Reg n, 0)::stack
   | DW_OP_reg0  -> Loc(Reg 0, 0)::stack
   | DW_OP_reg1  -> Loc(Reg 1, 0)::stack
   | DW_OP_reg2  -> Loc(Reg 2, 0)::stack
@@ -620,6 +620,9 @@ let _ =
 
 let _ =
   test (eval_all [DW_OP_regval 2] [] context) [Val 1002] "DW_OP_regval"
+
+let _ =
+  test (eval_all [DW_OP_regx 123] [] context) [Loc(Reg 123, 0)] "DW_OP_regx"
 
 (* Simple arithmethic exp test.  *)
 let _ =
