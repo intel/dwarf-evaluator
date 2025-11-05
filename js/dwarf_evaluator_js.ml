@@ -7,6 +7,21 @@ open Printf
 (* Shorthand for coerced getElementById with assertion *)
 let get id coerce_to = Option.get (getElementById_coerce id coerce_to)
 
+let amp_re = Str.regexp {|&|}
+let lt_re = Str.regexp {|<|}
+let gt_re = Str.regexp {|>|}
+let quot_re = Str.regexp {|"|}
+let squot_re = Str.regexp {|'|}
+(* FIXME: Using a typed representation of HTML while building could avoid
+   the need for this, but for now we explicitly escape strings that may contain
+   valid HTML controlled by the user. *)
+let escapeHTML s = s
+  |> Str.global_replace amp_re "&amp;"
+  |> Str.global_replace lt_re "&lt;"
+  |> Str.global_replace gt_re "&gt;"
+  |> Str.global_replace quot_re "&quot;"
+  |> Str.global_replace squot_re "&#039;"
+
 (* Get the non-empty, non-comment part of line, or None if it doesn't exist *)
 let noncomment_part line =
   List.nth_opt (String.split_on_char ';' line) 0
@@ -80,7 +95,8 @@ and html_of_storage storage =
   | Mem aspace -> span "storage" (sprintf "Mem(aspace=%d)" aspace)
   | Reg number -> span "storage" (sprintf "Reg(%d)" number)
   | Undefined -> span "storage" "Undef"
-  | ImpData data -> span "storage" (sprintf "Implicit(value=%s)" (String.escaped data))
+  | ImpData data ->
+      span "storage" (String.escaped data |> escapeHTML |> sprintf {|Implicit(value="%s")|})
   | ImpPointer loc -> span "storage" (sprintf "Implicit(pointer=%s)" (html_of_location loc))
   | Composite parts ->
       let sorted_parts = List.sort (fun (s1, _, _) (s2, _, _) -> s1 - s2) parts in
@@ -126,8 +142,10 @@ let _ =
         let ctx = (context_t_of_sexp (Parsexp.Single.parse_string_exn context_sexp_string)) in
         let locexpr = (locexpr_t_of_sexp (Parsexp.Single.parse_string_exn locexpr_sexp_string)) in
         build_output_html ctx locexpr
-      with e -> Printexc.to_string e in
-    preprocessed##.innerHTML := Js.string locexpr_sexp_string;
+      with e -> Printexc.to_string e |> escapeHTML in
+    preprocessed##.innerHTML := locexpr_sexp_string |> escapeHTML |> Js.string;
+    (* FIXME: This cannot be passed through escapeHTML as we have built up
+     an HTML document as a string. *)
     output##.innerHTML := Js.string output_html;
     Js._true in
   ignore (addEventListener eval Event.click (handler render) Js._false)
