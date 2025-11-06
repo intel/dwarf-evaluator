@@ -212,10 +212,10 @@ let rec discard n lst =
   else discard (n - 1) (List.tl lst)
 
 exception ConversionError of string * stack_element
-exception EvalError of string * dwarf_op * (stack_element list)
+exception EvalError of string * (stack_element list)
 
-let eval_error op stack =
-  raise (EvalError("Cannot evaluate", op, stack))
+let raise_error msg stack =
+  raise (EvalError(msg, stack))
 
 (* Implicit conversion rules.  *)
 let as_value element =
@@ -232,6 +232,7 @@ let as_loc element =
 (* Helper for eval_one which handles ops that do not need to consider or modify
    the list of ops in the expression.  *)
 let rec eval_one_simple op stack context =
+  let eval_error msg = raise_error msg stack in
   match op with
   | DW_OP_const4s(x) -> Val(x)::stack
 
@@ -271,43 +272,43 @@ let rec eval_one_simple op stack context =
   | DW_OP_plus ->
      (match stack with
       | e1::e2::stack' -> Val((as_value e1) + (as_value e2))::stack'
-      | _ -> eval_error op stack)
+      | _ -> eval_error "DW_OP_plus: need two elements on stack")
 
   | DW_OP_mul ->
      (match stack with
       | e1::e2::stack' -> Val((as_value e1) * (as_value e2))::stack'
-      | _ -> eval_error op stack)
+      | _ -> eval_error "DW_OP_mul: need two elements on stack")
 
   | DW_OP_dup ->
      (match stack with
       | e1::stack' -> e1::e1::stack'
-      | _ -> eval_error op stack)
+      | _ -> eval_error "DW_OP_dup: need an element on stack")
 
   | DW_OP_drop ->
      (match stack with
       | e1::stack' -> stack'
-      | _ -> eval_error op stack)
+      | _ -> eval_error "DW_OP_drop: need two elements on stack")
 
   | DW_OP_pick(i) ->
      if i >= List.length stack then
-       eval_error op stack
+       eval_error ("DW_OP_pick " ^ string_of_int i ^ ": stack is too short")
      else
        (List.nth stack i)::stack
 
   | DW_OP_over ->
      (match stack with
       | e1::e2::stack' -> e2::e1::e2::stack'
-      | _ -> eval_error op stack)
+      | _ -> eval_error "DW_OP_over: need two elements on stack")
 
   | DW_OP_swap ->
      (match stack with
       | e1::e2::stack' -> e2::e1::stack'
-      | _ -> eval_error op stack)
+      | _ -> eval_error "DW_OP_swap: need two elements on stack")
 
   | DW_OP_rot ->
      (match stack with
       | e1::e2::e3::stack' -> e2::e3::e1::stack'
-      | _ -> eval_error op stack)
+      | _ -> eval_error "DW_OP_rot: need three elements on stack")
 
   | DW_OP_push_lane -> Val(lane context)::stack
 
@@ -325,7 +326,7 @@ let rec eval_one_simple op stack context =
            Val(1)::stack'
          else
            Val(0)::stack'
-      | _ -> eval_error op stack)
+      | _ -> eval_error "DW_OP_lt: need two elements on stack")
 
   | DW_OP_eq ->
      (match stack with
@@ -334,7 +335,7 @@ let rec eval_one_simple op stack context =
            Val(1)::stack'
          else
            Val(0)::stack'
-      | _ -> eval_error op stack)
+      | _ -> eval_error "DW_OP_eq: need two elements on stack")
 
   | DW_OP_call(ops) ->
      eval_all ops stack context
@@ -418,21 +419,21 @@ let rec eval_one_simple op stack context =
      if String.length data == n then
        Loc(ImpData data, 0)::stack
      else
-       eval_error op stack
+       eval_error ("DW_OP_implicit_value" ^ string_of_int n ^ ": data length does not match")
 
   | DW_OP_stack_value ->
      (match stack with
       | e::stack' ->
          let data = int_to_data (as_value e)
          in Loc(ImpData data, 0)::stack'
-      | _ -> eval_error op stack)
+      | _ -> eval_error "DW_OP_stack_value: need an element on stack")
 
   | DW_OP_implicit_pointer(locexpr, offset) ->
      (match eval_all locexpr [] context with
       | result::_ ->
          let (storage, offset2) = as_loc result
          in Loc(ImpPointer(storage, offset2 + offset), 0)::stack
-      | _ -> eval_error op stack)
+      | _ -> eval_error "DW_OP_implicit_pointer: referenced locexpr must evaluate to a location")
 
   | DW_OP_composite -> Loc(Composite [], 0)::stack
 
@@ -445,7 +446,7 @@ let rec eval_one_simple op stack context =
                             | (s, e, _)::_ -> (e, e + n, loc))
             in Loc(Composite(new_part::parts), off)::stack'
 
-      | _ -> eval_error op stack)
+      | _ -> eval_error "DW_OP_piece: need a location and a composite location on stack")
 
   | DW_OP_push_object_location -> Loc(objekt context)::stack
 
@@ -461,10 +462,12 @@ let rec eval_one_simple op stack context =
          let b_storage_size = data_size b_storage context in
          let o_storage_size = data_size o_storage context in
          let overlay_start = offset + b_offset in
-         if (width < 0
-             || overlay_start < 0
-             || width > o_storage_size - o_offset) then
-           eval_error op stack
+         if width < 0 then
+           eval_error "DW_OP_overlay: width operand must be non-negative"
+         else if overlay_start < 0 then
+           eval_error "DW_OP_overlay: offset + base_offset must be non-negative"
+         else if width > o_storage_size - o_offset then
+           eval_error "DW_OP_overlay: overlay storage must be big enough for width"
          else
            (* There are 4 kinds of parts that may occur in the
               resulting composite.  Although not all kinds will end
@@ -495,14 +498,14 @@ let rec eval_one_simple op stack context =
            let parts = simplify [part1; part2; part3; part4] in
            Loc(Composite parts, b_offset)::stack'
 
-      | _ -> eval_error op stack)
+      | _ -> eval_error "DW_OP_overlay: need four elements on stack")
 
   | DW_OP_deref ->
      (match stack with
       | element::stack' ->
          Val(fetch_int context (as_loc element))::stack'
 
-      | _ -> eval_error op stack)
+      | _ -> eval_error "DW_OP_deref: need an element on stack")
 
   | DW_OP_offset ->
      (match stack with
@@ -513,7 +516,7 @@ let rec eval_one_simple op stack context =
                  raise (OutOfBounds (storage, offset))
                else
                  Loc(storage, new_offset)::stack'
-      | _ -> eval_error op stack)
+      | _ -> eval_error "DW_OP_offset: need two elements on stack")
 
   (* Handled in the upper level.  *)
   | DW_OP_skip(n) | DW_OP_bra(n) -> stack
@@ -537,7 +540,7 @@ and eval_one ops stack context =
            (ops', stack', context)
          else
            ((discard n ops'), stack', context)
-      | _ -> eval_error (DW_OP_bra(n)) stack)
+      | _ -> raise_error "DW_OP_bra: need an element on stack" stack)
 
   | op::ops' -> (ops', (eval_one_simple op stack context), context)
 
