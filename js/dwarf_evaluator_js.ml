@@ -7,21 +7,6 @@ open Printf
 (* Shorthand for coerced getElementById with assertion *)
 let get id coerce_to = Option.get (getElementById_coerce id coerce_to)
 
-let amp_re = Str.regexp {|&|}
-let lt_re = Str.regexp {|<|}
-let gt_re = Str.regexp {|>|}
-let quot_re = Str.regexp {|"|}
-let squot_re = Str.regexp {|'|}
-(* FIXME: Using a typed representation of HTML while building could avoid
-   the need for this, but for now we explicitly escape strings that may contain
-   valid HTML controlled by the user. *)
-let escapeHTML s = s
-  |> Str.global_replace amp_re "&amp;"
-  |> Str.global_replace lt_re "&lt;"
-  |> Str.global_replace gt_re "&gt;"
-  |> Str.global_replace quot_re "&quot;"
-  |> Str.global_replace squot_re "&#039;"
-
 (* Get the non-empty, non-comment part of line, or None if it doesn't exist *)
 let noncomment_part line =
   List.nth_opt (String.split_on_char ';' line) 0
@@ -62,56 +47,68 @@ let preprocess input =
     |> String.concat "\n"
     |> (fun s -> "(" ^ s ^ ")")
 
-let span klass inner_html =
-  sprintf {|<span class="%s">%s</span>|} klass inner_html
+let span ?(cl="") children =
+  let s = Dom_html.createSpan Dom_html.window##.document in
+  if cl != "" then s##.classList##add (Js.string cl);
+  children |> List.iter (Dom.appendChild s);
+  s
 
-let rec html_of_stack_element elem =
-  let html = match elem with
-  | Val v ->
-      span "stack_element_kind" "Val" ^
-      html_of_value v
-  | Loc l ->
-      span "stack_element_kind" "Loc" ^
-      html_of_location l
+let text s = Dom_html.window##.document##createTextNode (Js.string s)
+let text_of_int i = text (string_of_int i)
+
+let setChildren elem children =
+  elem##.innerHTML := Js.string "";
+  List.iter (Dom.appendChild elem) children
+
+let rec elem_of_stack_element element =
+  let children = match element with
+  | Val v -> [span ~cl:"stack_element_kind" [text "Val"]; elem_of_value v]
+  | Loc l -> [span ~cl:"stack_element_kind" [text "Loc"]; elem_of_location l]
   in
-  span "stack_element" html
-and html_of_value v =
-  span "value" (string_of_int v)
-and html_of_location (storage, offset) =
-  span "location_offset" (string_of_int offset) ^
-  span "location_storage" (html_of_storage storage)
-and html_of_storage storage =
+  span ~cl:"stack_element" children
+and elem_of_value v = span ~cl:"value" [text_of_int v]
+and elem_of_location (storage, offset) =
+  span ~cl:"location" [
+    span ~cl:"location_offset" [text_of_int offset];
+    span ~cl:"location_storage" [elem_of_storage storage]
+  ]
+and elem_of_storage storage =
   match storage with
-  | Mem aspace -> span "storage" (sprintf "Mem(aspace=%d)" aspace)
-  | Reg number -> span "storage" (sprintf "Reg(%d)" number)
-  | Undefined -> span "storage" "Undef"
+  | Mem aspace -> span ~cl:"storage" [text (sprintf "Mem(aspace=%d)" aspace)]
+  | Reg number -> span ~cl:"storage" [text (sprintf "Reg(%d)" number)]
+  | Undefined -> span ~cl:"storage" [text "Undef"]
   | ImpData data ->
-      span "storage" (String.escaped data |> escapeHTML |> sprintf {|Implicit(value="%s")|})
-  | ImpPointer loc -> span "storage" (sprintf "Implicit(pointer=%s)" (html_of_location loc))
+      span ~cl:"storage" [text (String.escaped data |> sprintf {|Implicit(value="%s")|})]
+  | ImpPointer loc -> span ~cl:"storage" [
+      span [text "Implicit(pointer="];
+      elem_of_location loc;
+      span [text ")"]
+    ]
   | Composite parts ->
       let sorted_parts = List.sort (fun (s1, _, _) (s2, _, _) -> s1 - s2) parts in
-      span "storage" "Composite" ^
-      span "composite_parts" (List.fold_left (fun acc p -> acc ^ html_of_part p) "" sorted_parts)
-and html_of_part (s, e, loc) =
-  span "composite_part" (
-    span "composite_part_start" (string_of_int s) ^
-    span "composite_part_end" (string_of_int e) ^
-    html_of_location loc
-  )
+      span [
+        span ~cl:"storage" [text "Composite"];
+        span ~cl:"composite_parts" (List.map elem_of_part sorted_parts)
+      ]
+and elem_of_part (s, e, loc) =
+  span ~cl:"composite_part" [
+    span ~cl:"composite_part_start" [text_of_int s];
+    span ~cl:"composite_part_end" [text_of_int e];
+    elem_of_location loc
+  ]
 
-let rec build_output_html context ops =
-  build_output_html_impl "" context ops []
-and build_output_html_impl result context ops stack =
+let rec build_output_elems context ops =
+  build_output_elems_impl [] context ops []
+and build_output_elems_impl result context ops stack =
   let (ops', stack', context') = Dwarf_evaluator.eval_one ops stack context in
-  let result' = result ^
-    span "trace_step" (
-      span "trace_step_op" (Sexp.to_string_hum (sexp_of_dwarf_op (List.hd ops))) ^
-      span "trace_step_stack" (List.fold_left (fun acc e -> acc ^ html_of_stack_element e) "" stack')
-    )
+  let result' = result @ [span ~cl:"trace_step" [
+      span ~cl:"trace_step_op" [text (List.hd ops |> sexp_of_dwarf_op |> Sexp.to_string_hum)];
+      span ~cl:"trace_step_stack" (List.map elem_of_stack_element stack')
+    ]]
   in
   match ops' with
-  | [] -> result' ^ span "trace_result" (html_of_stack_element (List.hd stack'))
-  | _ -> build_output_html_impl result' context' ops' stack'
+  | [] -> result' @ [span ~cl:"trace_result" [elem_of_stack_element (List.hd stack')]]
+  | _ -> build_output_elems_impl result' context' ops' stack'
 
 let _ =
   let context = get "context" CoerceTo.textarea in
@@ -127,15 +124,17 @@ let _ =
   let render _ =
     let context_sexp_string = Js.to_string context##.value in
     let locexpr_sexp_string = preprocess (Js.to_string input##.value) in
-    let output_html =
+    let output_children =
       try
-        let ctx = (context_t_of_sexp (Parsexp.Single.parse_string_exn context_sexp_string)) in
-        let locexpr = (locexpr_t_of_sexp (Parsexp.Single.parse_string_exn locexpr_sexp_string)) in
-        build_output_html ctx locexpr
-      with e -> Printexc.to_string e |> escapeHTML in
-    preprocessed##.innerHTML := locexpr_sexp_string |> escapeHTML |> Js.string;
-    (* FIXME: This cannot be passed through escapeHTML as we have built up
-     an HTML document as a string. *)
-    output##.innerHTML := Js.string output_html;
+        let ctx = try
+          context_t_of_sexp (Parsexp.Single.parse_string_exn context_sexp_string)
+        with e -> failwith (sprintf "Parsing Context: %s" (Printexc.to_string e)) in
+        let locexpr = try
+          locexpr_t_of_sexp (Parsexp.Single.parse_string_exn locexpr_sexp_string)
+        with e -> failwith (sprintf "Parsing Input: %s" (Printexc.to_string e)) in
+        build_output_elems ctx locexpr
+      with e -> [span [text (Printexc.to_string e)]] in
+    setChildren preprocessed [span [text locexpr_sexp_string]];
+    setChildren output output_children;
     Js._true in
   ignore (addEventListener eval Event.click (handler render) Js._false)
