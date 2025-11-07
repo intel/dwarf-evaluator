@@ -498,7 +498,7 @@ let rec eval_one_simple op stack context =
 
               1. The part of the base storage up to the overlay.  If
               the overlay is beyond the base storage limits, this
-              parts goes up to the end of the base storage.
+              part goes up to the end of the base storage.
 
               2. The expansion with undefined storage from the end of
               the base until the beginning of the overlay,
