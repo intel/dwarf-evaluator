@@ -212,9 +212,11 @@ let simplify parts =
     | part::parts' -> part::(flatten parts')
     | [] -> []
   in
-  let filtered = List.fold_left filter [] parts in
-  let merged = List.fold_left merge [] filtered in
-  flatten (List. rev merged)
+  parts
+  |> List.fold_left filter []
+  |> List.fold_left merge []
+  |> List.rev
+  |> flatten
 
 let rec read_one_byte context (location: location) =
   let (storage, offset) = location
