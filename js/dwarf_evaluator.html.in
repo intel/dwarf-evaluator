@@ -6,7 +6,9 @@
 <style>
 html {
     font-family: Calibri, sans-serif;
+    box-sizing: border-box;
 }
+*, *:before, *:after { box-sizing: inherit; }
 h1, h2, h3, h4 {
     margin: 0;
 }
@@ -44,7 +46,6 @@ textarea,
     border: 1px solid gray;
     border-radius: 3px;
     overflow: auto;
-    box-sizing: border-box;
 }
 textarea {
     width: 100%;
@@ -75,7 +76,7 @@ details {
     display: block;
     text-align: center;
 }
-.stack_element {
+.trace_step_stack > .stack_element {
     display: block;
     border-bottom: 1px solid black;
     margin-top: 2px;
@@ -114,13 +115,13 @@ details {
 }
 .stack_element > *::after,
 .composite_part > *::after,
-.trace_result > *::after
+.location > *::after
 {
     content: ', ';
 }
 .composite_part > *:last-child::after,
 .stack_element > *:last-child::after,
-.trace_result > *:last-child::after
+.location > *:last-child::after
 {
     content: '';
 }
