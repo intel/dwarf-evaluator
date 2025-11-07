@@ -28,16 +28,6 @@ let noncomment_part line =
   |> Option.map String.trim
   |> function | Some "" -> None | s -> s
 
-let context_re = Str.regexp ") ("
-let context_default = (Sexp.to_string_hum (sexp_of_context_t Dwarf_evaluator.context))
-  |> Str.global_replace context_re ")\n ("
-let input_default =
-"DW_OP_reg4 ; edit me!
-DW_OP_lit1
-DW_OP_offset
-DW_OP_deref
-DW_OP_stack_value"
-
 (*
   Heuristically "Sexp-ify" the input.
 
@@ -130,8 +120,8 @@ let _ =
   let preprocessed = get "preprocessed" CoerceTo.element in
   let output = get "output" CoerceTo.element in
   let arguments = Url.Current.arguments in
-  let initial_context = List.assoc_opt "context" arguments |> Option.value ~default:context_default in
-  let initial_input = List.assoc_opt "input" arguments |> Option.value ~default:input_default in
+  let initial_context = List.assoc_opt "context" arguments |> Option.value ~default:"" in
+  let initial_input = List.assoc_opt "input" arguments |> Option.value ~default:"" in
   context##.innerHTML := (Js.string initial_context);
   input##.innerHTML := (Js.string initial_input);
   let render _ =

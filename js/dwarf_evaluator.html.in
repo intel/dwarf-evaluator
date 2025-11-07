@@ -59,6 +59,23 @@ button {
     width: 100%;
     font-weight: bold;
 }
+#presets_heading,
+#presets {
+    display: inline;
+}
+#presets_heading::after {
+    content: ': ';
+    color: black;
+}
+#presets { padding: 0; }
+#presets > li {
+    display: inline-block;
+    margin-left: 0.5em;
+}
+#presets > li::before {
+    content: '• ';
+    color: black;
+}
 details {
     margin-bottom: 1em;
 }
@@ -148,7 +165,9 @@ footer {
         autocapitalize="false" autocomplete="false" autocorrect="false"
         autofocus="true" required="true" spellcheck="false" wrap="off"
         ></textarea>
-    <div><button id="eval">Evaluate</button></div>
+    <div><button type="button" id="eval">Evaluate</button></div>
+    <h3 id="presets_heading">Presets</h3>
+    <ul id="presets"></ul>
     <h2>Output</h2>
     <h3>Preprocessed Input</h3>
     <pre class="textarea" id="preprocessed">
@@ -200,8 +219,72 @@ footer {
         let url = new URL(window.location.href);
         url.searchParams.set('context', context.value);
         url.searchParams.set('input', input.value);
-        window.history.replaceState({}, '', url.toString());
+        window.history.replaceState({}, '', url);
     });
+    let dedent = (s) => {
+        return s
+            .split('\n')
+            .map(l => l.trimStart())
+            .filter(l => l !== '')
+            .join('\n');
+    };
+    let originalUrl = new URL(window.location.href);
+    let presets = document.getElementById('presets');
+    let addPreset = (shortname, description, ctx, inp) => {
+        let a = document.createElement('a');
+        a.innerHTML = shortname;
+        a.title = description;
+        let url = new URL(originalUrl);
+        url.searchParams.set('context', dedent(ctx));
+        url.searchParams.set('input', dedent(inp));
+        a.href = url;
+        let li = document.createElement('li');
+        li.appendChild(a);
+        presets.appendChild(li);
+    };
+    addPreset('Clear', 'Reset to empty context and input', '', '');
+    addPreset(
+    'Maths',
+    'Some value-based arithmetic',
+    '()',
+    `
+        DW_OP_const4s 40
+        DW_OP_lit2
+        DW_OP_plus
+    `);
+    addPreset(
+    'Pointer',
+    'Dereference memory and form implicit value via pointer found in register',
+    `(
+        (TargetMem 0 "abcdefghijklmnop")
+        (TargetReg 0 "\\004\\000\\000\\000")
+    )`,
+    `
+        DW_OP_reg0
+        DW_OP_deref
+        DW_OP_deref
+        DW_OP_stack_value
+    `);
+    addPreset(
+    'Overlay',
+    'Example using DW_OP_overlay',
+    `(
+        (TargetMem 0 "abcdefghijklmnop")
+        (TargetReg 0 "CAFE")
+        (TargetReg 1 "ASDF")
+    )`,
+    `
+        DW_OP_lit0 ; base
+        DW_OP_reg0 ; overlay
+        DW_OP_lit2 ; overlay offset
+        DW_OP_lit4 ; overlay size
+        DW_OP_overlay
+        ; base is now the composite on top of the stack
+        DW_OP_reg1 ; overlay
+        DW_OP_lit8 ; overlay offset
+        DW_OP_lit4 ; overlay size
+        DW_OP_overlay
+    `);
 </script>
 <script defer src="dwarf_evaluator_js.bc.js"></script>
 </html>
