@@ -37,7 +37,7 @@ type dwarf_op =
   | DW_OP_eq
   | DW_OP_skip of int (* Number of operators to skip.  *)
   | DW_OP_bra of int (* Number of operators to skip.  *)
-  | DW_OP_call of (dwarf_op list)
+  | DW_OP_call of string (* Name of the DW_AT_location element in the context.  *)
 
   | DW_OP_addr of int
   | DW_OP_regx of int
@@ -63,7 +63,7 @@ type dwarf_op =
   | DW_OP_undefined
   | DW_OP_implicit_value of int * data
   | DW_OP_stack_value
-  | DW_OP_implicit_pointer of (dwarf_op list) * int
+  | DW_OP_implicit_pointer of string * int
   | DW_OP_composite
   | DW_OP_piece of int
   | DW_OP_overlay
@@ -399,8 +399,8 @@ let rec eval_one_simple op stack context =
            Val(0)::stack'
       | _ -> eval_error "DW_OP_eq: need two elements on stack")
 
-  | DW_OP_call(ops) ->
-     eval_all ops stack context
+  | DW_OP_call(name) ->
+     eval_all (dw_at_location context name) stack context
 
   | DW_OP_addr(a) -> Loc(Mem 0, a)::stack
 
@@ -490,8 +490,8 @@ let rec eval_one_simple op stack context =
          in Loc(ImpData data, 0)::stack'
       | _ -> eval_error "DW_OP_stack_value: need an element on stack")
 
-  | DW_OP_implicit_pointer(locexpr, offset) ->
-     (match eval_all locexpr [] context with
+  | DW_OP_implicit_pointer(name, offset) ->
+     (match eval_all (dw_at_location context name) [] context with
       | result::_ ->
          let (storage, offset2) = as_loc result
          in Loc(ImpPointer(storage, offset2 + offset), 0)::stack
@@ -808,13 +808,15 @@ let _ =
                DW_OP_lit5;
                DW_OP_plus] context) (Val 9) "control flow 2"
 let _ =
+  let context = DW_AT_location("plus", [DW_OP_plus])::context in
   test (eval0 [DW_OP_lit17;
                DW_OP_lit25;
-               DW_OP_call [DW_OP_plus]] context) (Val 42) "DW_OP_call 1"
+               DW_OP_call "plus"] context) (Val 42) "DW_OP_call 1"
 let _ =
+  let context = DW_AT_location("plus", [DW_OP_plus])::context in
   test (eval0 [DW_OP_lit17;
                DW_OP_lit25;
-               DW_OP_call [DW_OP_plus];
+               DW_OP_call "plus";
                DW_OP_lit8;
                DW_OP_plus] context) (Val 50) "DW_OP_call 2"
 
@@ -860,7 +862,8 @@ let _ =
 (* ip is an implicit pointer to x.  We can deref, but we cannot
    read/write ip.  *)
 let _ =
-  let ip_locexpr = [DW_OP_implicit_pointer ([DW_OP_addr 4], 0)] in
+  let context = DW_AT_location("x", [DW_OP_addr 4])::context in
+  let ip_locexpr = [DW_OP_implicit_pointer ("x", 0)] in
   let ip_loc = eval_to_loc ip_locexpr context in
   let ip_deref_val = dbg_deref ip_loc context in
   test ip_deref_val 104 "value of *ip, pointing to memory"
@@ -868,7 +871,8 @@ let _ =
 (* ip is an implicit pointer to a variable that has been promoted to
    register 3.  *)
 let _ =
-  let ip_locexpr = [DW_OP_implicit_pointer ([DW_OP_reg3], 0)] in
+  let context = DW_AT_location("var", [DW_OP_reg3])::context in
+  let ip_locexpr = [DW_OP_implicit_pointer ("var", 0)] in
   let ip_loc = eval_to_loc ip_locexpr context in
   let ip_deref_val = dbg_deref ip_loc context in
   test ip_deref_val 1003 "value of *ip, pointing to register"
@@ -939,10 +943,11 @@ let _ =
 *)
 
 let _ =
+  let context = DW_AT_location("x", [DW_OP_addr 4])::context in
   let s_locexpr = [DW_OP_composite;
                    DW_OP_addr 20;
                    DW_OP_piece 4;
-                   DW_OP_implicit_pointer ([DW_OP_addr 4], 0);
+                   DW_OP_implicit_pointer ("x", 0);
                    DW_OP_piece 4;
                    DW_OP_reg2;
                    DW_OP_piece 4;
