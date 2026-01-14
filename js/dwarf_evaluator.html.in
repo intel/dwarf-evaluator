@@ -159,11 +159,13 @@ footer {
     <textarea id="context" rows="16"
         autocapitalize="false" autocomplete="false" autocorrect="false"
         autofocus="true" required="true" spellcheck="false" wrap="off"
+        maxlength="2000"
         ></textarea>
     <h3>Expression</h3>
     <textarea id="input" rows="16"
         autocapitalize="false" autocomplete="false" autocorrect="false"
         autofocus="true" required="true" spellcheck="false" wrap="off"
+        maxlength="2000"
         ></textarea>
     <div><button type="button" id="eval">Evaluate</button></div>
     <h3 id="presets_heading">Presets</h3>
