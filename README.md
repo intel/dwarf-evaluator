@@ -1,4 +1,14 @@
-A DWARF expression evaluator.
+# dwarf-evaluator
+
+This is an evaluator for DWARF expressions implemented in OCaml.  It
+aims to be concise and lightweight.  It can be used by tool developers
+to learn and understand DWARF by examining the precise definitions of
+DWARF operators and by running examples.  The evaluator follows the
+"locations on the stack" semantics that is defined by DWARF 6.
+
+There exist a [web playground](https://intel.github.io/dwarf-evaluator/).
+Concrete examples can be shared easily via playground links,
+[like this](https://intel.github.io/dwarf-evaluator/?context=%28%29&input=DW_OP_lit10%0ADW_OP_lit4%0ADW_OP_plus%0ADW_OP_lit3%0ADW_OP_mul%0A).
 
 ## Getting Started
 
