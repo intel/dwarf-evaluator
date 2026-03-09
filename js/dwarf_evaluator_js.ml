@@ -1,3 +1,6 @@
+(* Copyright (C) 2025-2026 Advanced Micro Devices, Inc.
+   SPDX-License-Identifier: MIT *)
+
 open Dwarf_evaluator_sexp
 open Js_of_ocaml
 open Dom_html

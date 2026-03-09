@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Copyright (C) 2025-2026 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: MIT
+
 -() { exit 1; }
 usage() { printf 'usage: %s target profile dep_html dep_js\n' "$0"; -; }
 

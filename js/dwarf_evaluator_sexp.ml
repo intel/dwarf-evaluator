@@ -1,3 +1,6 @@
+(* Copyright (C) 2025-2026 Advanced Micro Devices, Inc.
+   SPDX-License-Identifier: MIT *)
+
 open Sexplib.Std
 
 (* Re-open relevant types in Dwarf_evaluator to derive sexp functions *)

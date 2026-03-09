@@ -210,6 +210,8 @@ footer {
     <hr>
     <footer>
     <p>Built from <code>GIT_REVISION</code> at <code>CURRENT_TIME</code></p>
+    <p>The textual part of this work is licensed under <a href="https://spdx.org/licenses/CC-BY-4.0.html">CC-BY-4.0</a>;
+       the code part is licensed under <a href="https://spdx.org/licenses/MIT.html">MIT</a>.</p>
     </footer>
 </div>
 </body>
